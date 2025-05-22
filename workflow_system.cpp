@@ -3,152 +3,149 @@
 #include <vector>
 using namespace std;
 
-class Document
-{
-private:
-    string name_author;
-    string doc_name;
-    string main_text;
-
+class User {
+    int id_user;
+    string full_name, role_in_wf_system;
 public:
-    Document() : name_author(""), doc_name(""), main_text("") {}
-    Document(string name_author, string doc_name, string main_text) : name_author(name_author),
-                                                                      doc_name(doc_name),
-                                                                      main_text(main_text) {}
+    User() : id_user(0), full_name(""), role_in_wf_system("") {}
+    User(int id, string name, string role) : id_user(id), full_name(name), role_in_wf_system(role) {}
 
-    void add_document(){
-
+    void set_user_in_sys(int id, string name, string role) {
+        id_user = id; full_name = name; role_in_wf_system = role;
     }
 
-    string get_doc_name() const {return doc_name;}
+    string get_name() const { return full_name; }
+    string get_role() const { return role_in_wf_system; }
+
+    void display() const {
+        cout << "User: " << full_name << " (" << role_in_wf_system << ")\n";
+    }
 };
 
-class StoragePlace
-{ // место хранения
-private:
+class Document {
+    string name_author, doc_name, main_text;
+public:
+    Document() : name_author(""), doc_name(""), main_text("") {}
+    Document(string author, string name, string text)
+        : name_author(author), doc_name(name), main_text(text) {}
+
+    virtual void add_document() {
+        cout << "Document '" << doc_name << "' added by " << name_author << ".\n";
+    }
+
+    string get_doc_name() const { return doc_name; }
+};
+
+class StoragePlace {
     int id_place;
     string name_department;
-    vector <string> documents;
+    vector<string> documents;
 public:
     StoragePlace() : id_place(0), name_department("") {}
-    StoragePlace(int id_place, string name_department) : id_place(id_place), name_department(name_department) {}
+    StoragePlace(int id, string name) : id_place(id), name_department(name) {}
 
-    void add_doc_name(string doc_name){
+    void add_document_name(string doc_name) {
         documents.push_back(doc_name);
     }
-     void view_all_documents(){
-        cout << "Departament:" << name_department << "\nDocuments\n";
-        for (const auto &doc : documents){
-            cout << "-" << doc << endl;
+
+    void view_all_documents() const {
+        cout << "\nStorage in department: " << name_department << "\nDocuments:\n";
+        for (const auto& d : documents) cout << "- " << d << endl;
+    }
+};
+
+class WorkGroup {
+    int id_group;
+    string group_name;
+    vector<User> composition_group;
+public:
+    WorkGroup() : id_group(0), group_name("") {}
+    WorkGroup(int id, string name) : id_group(id), group_name(name) {}
+
+    void add_user_to_group(const User& user) {
+        composition_group.push_back(user);
+    }
+
+    void view_users_in_group() const {
+        cout << "\nGroup '" << group_name << "' Members:\n";
+        for (const auto& u : composition_group) u.display();
+    }
+};
+
+class WorkDoc : public Document, public StoragePlace, public WorkGroup {
+public:
+    WorkDoc(string author, string name, string text,
+            int sid, string dept, int gid, string gname)
+        : Document(author, name, text),
+          StoragePlace(sid, dept),
+          WorkGroup(gid, gname) {}
+
+    void editing_wd() { cout << "Editing work doc...\n"; }
+    void delete_wd() { cout << "Work doc deleted.\n"; }
+};
+
+class OrgDoc : public Document {
+    int doc_num;
+    bool saining = false, signing = false;
+    string doc_status;
+    User signer, approver;
+public:
+    OrgDoc(string name, int num, string status)
+        : Document("", name, ""), doc_num(num), doc_status(status) {}
+
+    void set_signer(User u) { signer = u; }
+    void set_approver(User u) { approver = u; }
+
+    void signing_the_doc(User u) {
+        if (u.get_role() == "signer") {
+            signing = true;
+            cout << u.get_name() << " signed the document.\n";
         }
     }
 
-    string get_departament_name() const {return name_department;}
-};
+    void document_approval(User u) {
+        if (u.get_role() == "approver") {
+            saining = true;
+            cout << u.get_name() << " approved the document.\n";
+        }
+    }
 
-class WorkGroup
-{
-private:
-    int id_group;
-    string group_name;
-    string composition_group;
-
-public:
-    WorkGroup() : id_group(0), group_name(""), composition_group("") {}
-    WorkGroup(int id, const string &name, const string &composition) : id_group(id),
-                                                                       group_name(name),
-                                                                       composition_group(composition) {}
-    void view_users_in_group(){
-
+    void print_status() const {
+        cout << "\nOrgDoc status: " << doc_status
+             << ", Signed: " << (signing ? "Yes" : "No")
+             << ", Approved: " << (saining ? "Yes" : "No") << endl;
     }
 };
 
-class WorkDoc : public Document, public StoragePlace, public WorkGroup // Наследуется от Document, StoragePlace, WorkGroup
-{
-public:
-    WorkDoc() : Document(), StoragePlace(), WorkGroup() {}
+// ⬇️ MAIN — взаимодействие через пользовательский ввод
+int main() {
+    string name, role, doc_name, text, dept, group;
+    int id, doc_id;
 
-    WorkDoc(string name_author, string doc_name, string main_text,
-            int id_place, string name_department,
-            int id_group, string group_name, string composition) : Document(name_author, doc_name, main_text),
-                                                                   StoragePlace(id_place, name_department),
-                                                                   WorkGroup(id_group, group_name, composition) {}
-    void editing_wd(){
+    cout << "Enter author name: "; getline(cin, name);
+    cout << "Enter doc name: "; getline(cin, doc_name);
+    cout << "Enter main text: "; getline(cin, text);
 
-    }
+    cout << "Enter storage department: "; getline(cin, dept);
+    cout << "Enter group name: "; getline(cin, group);
 
-    void delete_wd(){
+    WorkDoc wd(name, doc_name, text, 1, dept, 1, group);
+    wd.add_document(); wd.add_document_name(doc_name);
 
-    }
-                                                                };
+    cout << "\nAdd user to group.\nEnter user name: "; getline(cin, name);
+    cout << "Enter role (author/signer/approver): "; getline(cin, role);
+    User u1(1, name, role);
+    wd.add_user_to_group(u1);
 
-class OrgDoc : public Document // Наследуется от Document
-{
-private:
-    int doc_num;
-    bool saining;
-    bool signing;
-    string doc_status;
+    OrgDoc od(doc_name, 1001, "Pending");
+    if (role == "signer") od.set_signer(u1);
+    else if (role == "approver") od.set_approver(u1);
 
-public:
-    OrgDoc() : Document(), doc_num(0), saining(false), signing(false), doc_status("") {}
+    wd.view_all_documents(); wd.view_users_in_group();
 
-    OrgDoc(string doc_name, int d_num, bool saining, bool signing, string d_status) : Document("", doc_name, ""),
-                                                                                      doc_num(d_num),
-                                                                                      saining(saining),
-                                                                                      signing(signing),
-                                                                                      doc_status(d_status) {}
+    if (role == "signer") od.signing_the_doc(u1);
+    else if (role == "approver") od.document_approval(u1);
 
-      void editing_orgd(){
-
-      }// редактирование орг. документа
-      void delete_orgd(){
-
-      }// удаление орг. документа
-      void document_approval(){
-
-      }
-      void signing_the_doc(){
-
-      }
-      void is_signing(){
-
-      }
-      void is_approval(){
-
-
-      }
-
- };
-
-class User
-{
-private:
-    int id_user;
-    string full_name;
-    string role_in_wf_system;
-
-public:
-    User() : id_user(0), full_name(""), role_in_wf_system("") {}
-    User(int id_user, string full_name, string role) : id_user(id_user),
-                                                       full_name(full_name),
-                                                       role_in_wf_system(role) {}
-
-    void set_user_in_sys(int id, string name, string role)
-    { // .    Роль в системе документооборота (подписывающий, визирующий, автор)
-        id_user = id;
-        full_name = name;
-        role_in_wf_system = role;
-    }
-    string get_full_name() const {return full_name;}
-
-    string get_role_in_wfs() const {return role_in_wf_system;}
-
-    void display() const {
-        cout << "ID: " << id_user << ", Name: " << full_name << ", Role: " << role_in_wf_system << endl;
-    }
-};
-
-int main()
-{
+    od.print_status();
+    return 0;
 }
